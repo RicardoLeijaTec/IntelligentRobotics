@@ -18,7 +18,6 @@ def opencv_talker(image):
 		#rospy.loginfo(resize)
 		image_publisher.publish(image)
 		rate.sleep()'''
-
 l_h = 0
 l_s  = 0
 l_v  = 0
@@ -63,10 +62,8 @@ def handler(data):
 
 	# Blur the image for better edge detection
 	#img_blur = cv.GaussianBlur(hsv, (5,5),cv.BORDER_DEFAULT)
-	# Image resizing
-	#resize = cv.resize(img_blur, (1280,720))
-	#resize = cv.resize(img_blur, (640,360))
-	resize = cv.resize(frame, (320,180))
+	
+	resize = cv.resize(frame, (288,162)) # Image resizing
 	# Image show
 	#cv.imshow("Post processed image", resize)
 
@@ -87,14 +84,17 @@ def handler(data):
 		approx = cv.approxPolyDP(cnt, 0.01*cv.arcLength(cnt,True), True)
 		x = approx.ravel()[0]
 		ye = approx.ravel()[1]
-		if area > 400:
-		    cv.drawContours(resize,[approx],0,(0,0,0),5)
-		    if len(approx) == 4:
-			cv.putText(resize,"Rectangle",(x,ye),font,1,(0,0,0))
+		if area > 4000:
+			cv.drawContours(resize,[approx],0,(0,0,0),5)
+			if len(approx) == 4:
+				cv.putText(resize,"Rectangle",(x,ye),font,1,(0,0,0))
+		if area > 4000:
+			cv.drawContours(resize,[approx],0,(0,0,0),5)
+			if len(approx) == 1:
+				cv.putText(resize,"Circle",(x,ye),font,1,(0,0,0))
 
-	#cv.imshow("hsv",hsv)
-	cv.imshow("frme", resize)
-   	cv.imshow("mask",mask)
+	cv.imshow("Resized frame", resize)
+   	cv.imshow("Mask",mask)
 	cv.waitKey(3)
 	
 	cv_image_to_imgmsg = bridge.cv2_to_imgmsg(resize, encoding="passthrough")
@@ -102,12 +102,15 @@ def handler(data):
 	image_publisher.publish(cv_image_to_imgmsg)
 
 
-
 def opencv_listener():
 	rospy.init_node('image_listener', anonymous = True)
 	rospy.Subscriber("/video_source/raw", Image, handler)
 	rospy.Subscriber("/color_publisher", String, hsv_handler)
-	rospy.spin()
+	rate = rospy.Rate(30)	
+	#rospy.spin()
+	while not rospy.is_shutdown():
+		
+		rate.sleep()
 
 
 if __name__ == "__main__":

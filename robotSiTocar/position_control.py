@@ -38,8 +38,7 @@ light_state = ""  # Traffic light state
 # Publisher al nodo de velocidades
 cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10, latch=True)
 
-actual_position_pub = rospy.Publisher(
-    'actual_position', Pose, queue_size=10, latch=True)
+actual_position_pub = rospy.Publisher('actual_position', Pose, queue_size=10, latch=True)
 
 actual_pos = Pose()
 
@@ -161,10 +160,10 @@ def main():
 
     rospy.init_node('control_odom')
     r = rospy.Rate(100)
-    rl_gl_subscriber = rospy.Subscriber("/red_light_green_light", String, light_state_handler)
-    wl_subscriber = rospy.Subscriber("/wl", Float32, odom_l)
-    wr_subscriber = rospy.Subscriber("/wr", Float32, odom_r)
-    desired_position = rospy.Subscriber("/target_position", Pose, get_target)
+    rospy.Subscriber("/red_light_green_light", String, light_state_handler)
+    rospy.Subscriber("/wl", Float32, odom_l)
+    rospy.Subscriber("/wr", Float32, odom_r)
+    rospy.Subscriber("/target_position", Pose, get_target)
     while not rospy.is_shutdown():
         if(not halt):
             actuate()

@@ -37,8 +37,8 @@ while True:
         cv2.imshow('res_green', res_green)
         
 
-        lower_red = np.array([150,50,50])
-        upper_red = np.array([180,255,255])
+        lower_red = np.array([0,100,100])
+        upper_red = np.array([5,255,255])
         mask_red = cv2.inRange(hsv, lower_red, upper_red)                
         res_red = cv2.bitwise_and(frame, frame, mask=mask_red)
 
