@@ -71,8 +71,8 @@ def convexHull(points, n):
 points = []
 maxPuntos = int(input("Numero de puntos a generar: "))
 
-for puntos in range(0, maxPuntos):
-    points.append(Point(random.randint(-100,100),random.randint(-100,100)))
+for i in range(maxPuntos):
+    points.append(Point(random.randint(-100, 100), random.randint(-100, 100)))
 
 hull = convexHull(points, len(points))
 for idx in hull:

@@ -1,14 +1,13 @@
 # Code developed by Drip Team Remastered
 
 # Import needed libraries
-import rospy
 import sys
-from math import pi
+import rospy
 from geometry_msgs.msg import Pose
 
 # Final position sender
-def declare_position():
-	rospy.init_node('declare_position', anonymous = True) # Node initialization
+def send_pos():
+	rospy.init_node('send_pos', anonymous = True) # Node initialization
 	pub = rospy.Publisher('target_position', Pose, queue_size = 10) # Topic where the position is published
 	
 	pos = Pose() # Object of pose type
@@ -23,6 +22,6 @@ def declare_position():
 # Main function
 if __name__ == "__main__":
 	try:
-		declare_position()
+		send_pos()
 	except rospy.ROSInterruptException:
 		pass

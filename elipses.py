@@ -2,8 +2,6 @@
 #Codigo usado actualmente como demo para pruebas de vision(Elipses), Equipo 3
 # Actividad 5 Detectar colores de semaforo y activar motores
 # Convertir de imagen de ROS a imagen de OpenCv y viceversa
-
-
 import sys
 import rospy
 import cv2
@@ -12,8 +10,7 @@ from std_msgs.msg import String, Int32, Int32MultiArray
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
-class image_converter:
-
+class ImageConverter:
   def __init__(self):
     self.image_pub = rospy.Publisher("Video",Image, queue_size = 10)
     self.msgs_motores = rospy.Publisher("Mensaje_semaforo", String, queue_size = 10)
@@ -23,6 +20,7 @@ class image_converter:
 
     self.bridge = CvBridge()
     self.image_sub = rospy.Subscriber("video_source/raw", Image, self.callback)
+
   def callback(self,data):
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -155,8 +153,9 @@ class image_converter:
     except CvBridgeError as e:
       print(e)
 
+
 def main(args):
-  ic = image_converter()
+  ic = ImageConverter()
   rospy.init_node('image_converter', anonymous=True)
   try:
     rospy.spin()
