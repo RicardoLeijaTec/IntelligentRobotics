@@ -25,7 +25,6 @@ dt = 0.01  # Time between samples (s)
 
 final_pos_x = 0.0  # Posicion en x del centro del circulo en la imagen
 final_pos_y = 0.0  # Posicion en y del centro del circulo en la imagen
-final_pos_z = 0.0  # Radio del circulo
 
 # Estado del robot, 0 es para corregir angulo, 1 es para ir a la ubicacion deseada
 robot_state = 0
@@ -42,11 +41,14 @@ actual_pos = Pose()
 distance_until_center = -11
 iteraciones_centrado = 0
 
+def receive_circle(data):
+	global final_pos_x
+	final_pos_x = data.x
+
 def get_target(data):
     global halt, final_pos_x, final_pos_y, final_pos_z
     final_pos_x = data.position.x
     final_pos_y = data.position.y
-    final_pos_z = data.position.z
     # halt = False
 
 
