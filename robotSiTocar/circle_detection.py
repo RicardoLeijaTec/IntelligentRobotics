@@ -26,7 +26,7 @@ COLORS = {
     'name': 'blue',
     'color_boundaries': [
       (np.array([105, 50, 25]), np.array([135, 255, 255]))
-    ]
+    ],
     'blur': 5,
   },
   'red': {
