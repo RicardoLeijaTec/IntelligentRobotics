@@ -14,29 +14,28 @@ bridge = CvBridge()
 image_publisher = rospy.Publisher("image_publisher", Image, queue_size = 10)
 position_publisher = rospy.Publisher("circe_position", CirclePos, queue_size = 10)
 
-lower_red_1 = np.array([0,100,20])
-upper_red_1 = np.array([8,255,255])
-lower_red_2 = np.array([175,100,20])
-upper_red_2 = np.array([179,255,255])
-
-LOWER_GREEN = np.array([50, 75, 75])
-UPPER_GREEN = np.array([70, 255, 255])
-
-LOWER_BLUE = np.array([105, 50, 25])
-UPPER_BLUE = np.array([135, 255, 255])
-
 COLORS = {
-	'blue': {
-		'name': 'blue',
-		'lower': LOWER_BLUE,
-		'upper': UPPER_BLUE,
-		'blur': 5,
-	},
 	'green': {
 		'name': 'green',
-		'lower': LOWER_GREEN,
-		'upper': UPPER_GREEN,
+    'color_boundaries': [
+      (np.array([50, 75, 75]), np.array([70, 255, 255]))
+    ]
 		'blur': 3,
+	},
+	'blue': {
+		'name': 'blue',
+    'color_boundaries': [
+      (np.array([105, 50, 25]), np.array([135, 255, 255]))
+    ]
+		'blur': 5,
+	},
+  'red': {
+		'name': 'red',
+    'color_boundaries': [
+      (np.array([0,100,20]), np.array([8,255,255])),
+      (np.array([175,100,20]), np.array([179,255,255]))
+    ],
+		'blur': 5,
 	},
 }
 
@@ -49,9 +48,15 @@ conFound = []
 detecting_color = 'blue'
 
 
-def color_detection(frame, lower_bound, upper_bound, kernel_size = 5):
+def color_detection(frame, color_boundaries, kernel_size = 5):
 	frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-	color_mask = cv.inRange(frame, lower_bound, upper_bound)
+  
+  if(len(color_boundaries) > 0):
+    lower, upper = color_boundaries[0]
+    color_mask = cv.inRange(frame, lower, upper)
+  
+  for (lower, upper) in color_boundaries[1:]:
+	  color_mask = cv.add(color_mask, cv.inRange(frame, lower, upper))
 	frame = cv.bitwise_and(frame, frame, mask=color_mask)
 	frame = cv.medianBlur(frame, kernel_size)
 	#HSV2BGR then BGR2GRAY or HSV2GRAY
@@ -66,7 +71,7 @@ def detect_circle(frame, color):
 	global MIN_AREA, drawCon, filter, c, conFound
 
 	circle_position = CirclePos()
-	color_filtered = color_detection(frame, color['lower'], color['upper'], color['blur'])
+	color_filtered = color_detection(frame, color['color_boundaries'], color['blur'])
 	contours, _ = cv.findContours(color_filtered, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
 	for cnt in contours:
 		area = cv.contourArea(cnt)
