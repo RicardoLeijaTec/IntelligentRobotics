@@ -8,6 +8,7 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Pose, Twist
 from cv_bridge import CvBridge
 from solution.msg import CirclePos
+import detection
 
 bridge = CvBridge()
 
@@ -40,6 +41,7 @@ COLORS = {
     ],
     'blur': 5,
     'rgb': (255, 0, 0),
+    'mask_generator': detection.in_range,
   },
 }
 
@@ -54,17 +56,23 @@ def show_img(frame):
   cv.waitKey(3)
 
 
-def color_detection(frame, color_boundaries, kernel_size = 5):
+def color_detection(frame, color):
+  color_boundaries = color['color_boundaries']
+  kernel_size = color['blur']
+
   frame = np.copy(frame)
   frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
   
-  assert len(color_boundaries) > 0
+  if('mask_generator' in color):
+    color_mask = color['mask_generator'](frame)
+  else:
+    assert len(color_boundaries) > 0
 
-  lower, upper = color_boundaries[0]
-  color_mask = cv.inRange(frame, lower, upper)
-  
-  for (lower, upper) in color_boundaries[1:]:
-    color_mask = cv.add(color_mask, cv.inRange(frame, lower, upper))
+    lower, upper = color_boundaries[0]
+    color_mask = cv.inRange(frame, lower, upper)
+    
+    for (lower, upper) in color_boundaries[1:]:
+      color_mask = cv.add(color_mask, cv.inRange(frame, lower, upper))
   
   frame = cv.bitwise_and(frame, frame, mask=color_mask)
   frame = cv.medianBlur(frame, kernel_size)
@@ -80,7 +88,7 @@ def detect_circle(frame, color):
   global MIN_AREA, filter, conFound
 
   circle_position = CirclePos()
-  color_filtered = color_detection(frame, color['color_boundaries'], color['blur'])
+  color_filtered = color_detection(frame, color)
   # show_img(color_filtered)
   contours, _ = cv.findContours(color_filtered, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
   for cnt in contours:
