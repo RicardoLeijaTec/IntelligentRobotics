@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys, getopt
 import rospy
 import cv2 as cv
@@ -18,9 +19,10 @@ COLORS = {
   'green': {
     'name': 'green',
     'color_boundaries': [
-      (np.array([50, 75, 75]), np.array([70, 255, 255]))
+      (np.array([45, 57, 80]), np.array([75, 255, 255]))
     ],
-    'blur': 3,
+    'blur': 5,
+    'rgb': (0, 255, 0),
   },
   'blue': {
     'name': 'blue',
@@ -28,6 +30,7 @@ COLORS = {
       (np.array([105, 50, 25]), np.array([135, 255, 255]))
     ],
     'blur': 5,
+    'rgb': (0, 0, 255),
   },
   'red': {
     'name': 'red',
@@ -36,27 +39,33 @@ COLORS = {
       (np.array([175,100,20]), np.array([179,255,255]))
     ],
     'blur': 5,
+    'rgb': (255, 0, 0),
   },
 }
 
-MIN_AREA = 500
-drawCon = True
+MIN_AREA = 6000
 filter = 0
-c = (255, 0, 0)
 conFound = []
 
 detecting_color = 'blue'
 
+def show_img(frame):
+  cv.imshow('Detection', frame)
+  cv.waitKey(3)
+
 
 def color_detection(frame, color_boundaries, kernel_size = 5):
+  frame = np.copy(frame)
   frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
   
-  if(len(color_boundaries) > 0):
-    lower, upper = color_boundaries[0]
-    color_mask = cv.inRange(frame, lower, upper)
+  assert len(color_boundaries) > 0
+
+  lower, upper = color_boundaries[0]
+  color_mask = cv.inRange(frame, lower, upper)
   
   for (lower, upper) in color_boundaries[1:]:
     color_mask = cv.add(color_mask, cv.inRange(frame, lower, upper))
+  
   frame = cv.bitwise_and(frame, frame, mask=color_mask)
   frame = cv.medianBlur(frame, kernel_size)
   #HSV2BGR then BGR2GRAY or HSV2GRAY
@@ -68,23 +77,24 @@ def color_detection(frame, color_boundaries, kernel_size = 5):
 def detect_circle(frame, color):
   global position_publisher
 
-  global MIN_AREA, drawCon, filter, c, conFound
+  global MIN_AREA, filter, conFound
 
   circle_position = CirclePos()
   color_filtered = color_detection(frame, color['color_boundaries'], color['blur'])
+  # show_img(color_filtered)
   contours, _ = cv.findContours(color_filtered, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
   for cnt in contours:
     area = cv.contourArea(cnt)
     if area > MIN_AREA:
       peri = cv.arcLength(cnt, True)
       approx = cv.approxPolyDP(cnt, 0.02 * peri, True)
+      # centers, radius = cv.minEnclosingCircle(approx)
       if len(approx) == filter or filter == 0:
-        if drawCon:
-          cv.drawContours(frame, cnt, -1, c, 3)
+        cv.drawContours(frame, cnt, -1, color['rgb'], 3)
         x, y, w, h = cv.boundingRect(approx)
         cx, cy = x + (w // 2), y + (h // 2)
-        cv.rectangle(frame, (x, y), (x + w, y + h), c, 2)
-        cv.circle(frame, (cx, cy), 5, c, cv.FILLED)
+        cv.rectangle(frame, (x, y), ((x + w), (y + h)), color['rgb'], 2)
+        cv.circle(frame, (cx, cy), 5, color['rgb'], cv.FILLED)
         conFound.append({
           "cnt": cnt, "area": area,
           "bbox": [x, y, w, h], "center": [cx, cy]
@@ -97,11 +107,14 @@ def detect_circle(frame, color):
 
 
 def video_handler(data):
-  global image_publisher, detecting_color
+  global image_publisher, detecting_color, conFound
 
   frame = bridge.imgmsg_to_cv2(data, "bgr8")
 
   frame = detect_circle(frame, COLORS[detecting_color])
+
+  frame = cv.resize(frame, (1280//4, 720//4))
+  show_img(frame)
 
   cv_image_to_imgmsg = bridge.cv2_to_imgmsg(frame, encoding = "passthrough")
   image_publisher.publish(cv_image_to_imgmsg)
