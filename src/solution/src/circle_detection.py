@@ -6,7 +6,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from geometry_msgs.msg import Pose, Twist
 from cv_bridge import CvBridge
-from robotSiTocar.msg import CirclePos
+from solution.msg import CirclePos
 
 bridge = CvBridge()
 
