@@ -19,21 +19,21 @@ position_publisher = rospy.Publisher("circe_position", CirclePos, queue_size = 1
 COLORS = {
   'green': {
     'name': 'green',
-    'blur': 5,
+    'blur': 3,
     'rgb': (0, 255, 0),
-    'hue': 85,
+    'hue': 100, #85
   },
   'blue': {
     'name': 'blue',
-    'blur': 5,
+    'blur': 3,
     'rgb': (0, 0, 255),
-    'hue': 214,
+    'hue': 214, #214
   },
   'red': {
     'name': 'red',
-    'blur': 5,
+    'blur': 3,
     'rgb': (255, 0, 0),
-    'hue': 356,
+    'hue': 356, #356
   },
 }
 
@@ -55,7 +55,9 @@ def detect_color(frame, color):
   frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
   
   color_mask = color_detection.in_range(frame, color['hue']) 
+  color_mask = cv.medianBlur(color_mask, kernel_size)
 
+  return color_mask
   frame = cv.bitwise_and(frame, frame, mask=color_mask)
   frame = cv.medianBlur(frame, kernel_size)
 
@@ -71,7 +73,7 @@ def detect_circle(frame, color):
 
   circle_position = CirclePos()
   color_filtered = detect_color(frame, color)
-  #show_img(color_filtered)
+  show_img(color_filtered)
   contours, _ = cv.findContours(color_filtered, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
   for cnt in contours:
     area = cv.contourArea(cnt)
@@ -108,7 +110,7 @@ def video_handler(data):
   frame = detect_circle(frame, COLORS[detecting_color])
 
   frame = cv.resize(frame, (width//4, height//4))
-  show_img(frame)
+  #show_img(frame)
 
   cv_image_to_imgmsg = bridge.cv2_to_imgmsg(frame, encoding = "passthrough")
   image_publisher.publish(cv_image_to_imgmsg)
