@@ -24,6 +24,8 @@ COLORS = {
     ],
     'blur': 5,
     'rgb': (0, 255, 0),
+    'mask_generator': lambda frame: detection.in_range(frame, 85),
+    'hue': 85,
   },
   'blue': {
     'name': 'blue',
@@ -32,6 +34,8 @@ COLORS = {
     ],
     'blur': 5,
     'rgb': (0, 0, 255),
+    'mask_generator': lambda frame: detection.in_range(frame, 214),
+    'hue': 214,
   },
   'red': {
     'name': 'red',
@@ -41,7 +45,8 @@ COLORS = {
     ],
     'blur': 5,
     'rgb': (255, 0, 0),
-    'mask_generator': detection.in_range,
+    'mask_generator': lambda frame: detection.in_range(frame, 356),
+    'hue': 356,
   },
 }
 
