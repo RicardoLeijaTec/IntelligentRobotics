@@ -8,7 +8,7 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Pose, Twist
 from cv_bridge import CvBridge
 from solution.msg import CirclePos
-import detection
+import color_detection
 
 bridge = CvBridge()
 
@@ -19,33 +19,20 @@ position_publisher = rospy.Publisher("circe_position", CirclePos, queue_size = 1
 COLORS = {
   'green': {
     'name': 'green',
-    'color_boundaries': [
-      (np.array([45, 57, 80]), np.array([75, 255, 255]))
-    ],
     'blur': 5,
     'rgb': (0, 255, 0),
-    'mask_generator': lambda frame: detection.in_range(frame, 85),
     'hue': 85,
   },
   'blue': {
     'name': 'blue',
-    'color_boundaries': [
-      (np.array([105, 50, 25]), np.array([135, 255, 255]))
-    ],
     'blur': 5,
     'rgb': (0, 0, 255),
-    'mask_generator': lambda frame: detection.in_range(frame, 214),
     'hue': 214,
   },
   'red': {
     'name': 'red',
-    'color_boundaries': [
-      (np.array([0,100,20]), np.array([8,255,255])),
-      (np.array([175,100,20]), np.array([179,255,255]))
-    ],
     'blur': 5,
     'rgb': (255, 0, 0),
-    'mask_generator': lambda frame: detection.in_range(frame, 356),
     'hue': 356,
   },
 }
@@ -61,26 +48,17 @@ def show_img(frame):
   cv.waitKey(3)
 
 
-def color_detection(frame, color):
-  color_boundaries = color['color_boundaries']
+def detect_color(frame, color):
   kernel_size = color['blur']
 
   frame = np.copy(frame)
   frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
   
-  if('mask_generator' in color):
-    color_mask = color['mask_generator'](frame)
-  else:
-    assert len(color_boundaries) > 0
+  color_mask = color_detection.in_range(frame, color['hue']) 
 
-    lower, upper = color_boundaries[0]
-    color_mask = cv.inRange(frame, lower, upper)
-    
-    for (lower, upper) in color_boundaries[1:]:
-      color_mask = cv.add(color_mask, cv.inRange(frame, lower, upper))
-  
   frame = cv.bitwise_and(frame, frame, mask=color_mask)
   frame = cv.medianBlur(frame, kernel_size)
+
   #HSV2BGR then BGR2GRAY or HSV2GRAY
   frame = cv.cvtColor(frame, cv.COLOR_HSV2BGR)
   frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
@@ -89,12 +67,11 @@ def color_detection(frame, color):
 
 def detect_circle(frame, color):
   global position_publisher
-
   global MIN_AREA, filter, conFound
 
   circle_position = CirclePos()
-  color_filtered = color_detection(frame, color)
-  # show_img(color_filtered)
+  color_filtered = detect_color(frame, color)
+  #show_img(color_filtered)
   contours, _ = cv.findContours(color_filtered, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
   for cnt in contours:
     area = cv.contourArea(cnt)
@@ -124,9 +101,13 @@ def video_handler(data):
 
   frame = bridge.imgmsg_to_cv2(data, "bgr8")
 
+  height = frame.shape[0]
+  width = frame.shape[1]
+
+  frame = cv.resize(frame, (width//2, height//2))
   frame = detect_circle(frame, COLORS[detecting_color])
 
-  frame = cv.resize(frame, (1280//4, 720//4))
+  frame = cv.resize(frame, (width//4, height//4))
   show_img(frame)
 
   cv_image_to_imgmsg = bridge.cv2_to_imgmsg(frame, encoding = "passthrough")
