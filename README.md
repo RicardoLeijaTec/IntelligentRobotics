@@ -1,2 +1,2 @@
 # IntelligentRobotics
- Code of the Implementation of intelligent robotics course project of our team.
+Implementation of Intelligent Robotics course code developed for the team project.
